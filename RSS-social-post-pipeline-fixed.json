@@ -1,0 +1,149 @@
+{
+  "name": "RSS-social post pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            },
+            {
+              "hour": 6
+            }
+          ]
+        },
+        "feedUrl": "https://techcrunch.com/feed/"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "c1b8b0e7-a070-4758-84a9-5622b8be43fb",
+      "name": "RSS Feed Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      title: $json.title ?? $json.name ?? 'Untitled',\n      url: $json.link ?? $json.url ?? '',\n      content: $json.contentSnippet || $json.content || ''\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [208, 0],
+      "id": "ca39a49a-2323-4655-8ef2-602fbaf3396f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      title: $json.title,\n      url: $json.url,\n      content: $json.content.slice(0, 3000)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [416, 0],
+      "id": "3b6a43c7-3648-4566-bb2f-c38988140f33",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3\",\n  \"prompt\": \"You are a JSON API. Return ONLY a raw JSON object, no markdown, no backticks, no explanation.\\n\\nArticle:\\n{{$json.content}}\\n\\nReturn exactly this structure:\\n{\\\"bullets\\\": [\\\"point1\\\", \\\"point2\\\", \\\"point3\\\"], \\\"tweet\\\": \\\"tweet text here\\\", \\\"linkedin\\\": \\\"linkedin hook here\\\"}\",\n  \"stream\": false,\n  \"format\": \"json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [624, 0],
+      "id": "8a223f35-dd83-4054-a564-ee7ddc9b363e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  let raw = $json.response || '';\n\n  // Find the JSON object within the response\n  const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!jsonMatch) throw new Error('No JSON found in response');\n\n  const cleaned = jsonMatch[0]\n    .replace(/\\\\n/g, ' ')\n    .replace(/\\n/g, ' ')\n    .replace(/[\\u201C\\u201D]/g, '\"')\n    .replace(/[\\u2018\\u2019]/g, \"'\")\n    .trim();\n\n  const data = JSON.parse(cleaned);\n\n  const source = $('RSS Feed Trigger').item.json;\n\n  return [{\n    json: {\n      title: source.title ?? source.name ?? 'Untitled',\n      url: source.link ?? source.url ?? '',\n      bullets: Array.isArray(data.bullets) ? data.bullets : [],\n      tweet: data.tweet ?? '',\n      linkedin: data.linkedin ?? ''\n    }\n  }];\n\n} catch (e) {\n  const source = $('RSS Feed Trigger').item.json;\n  return [{\n    json: {\n      title: source.title ?? source.name ?? 'Parse Error',\n      url: source.link ?? source.url ?? '',\n      bullets: ['Error: ' + e.message],\n      tweet: '',\n      linkedin: ''\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [832, 0],
+      "id": "5c26b076-12dd-4f55-8df1-f308cbc0faa7",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "33d192a2-5805-8058-a260-d7403588d2ea",
+          "mode": "list",
+          "cachedResultName": "AI Content",
+          "cachedResultUrl": "https://www.notion.so/33d192a258058058a260d7403588d2ea"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Name|title",
+              "title": "={{$json.title}}"
+            },
+            {
+              "key": "URL|url",
+              "urlValue": "={{$json.url}}"
+            },
+            {
+              "key": "Bullets|rich_text",
+              "textContent": "={{$json.bullets.join('\\n')}}"
+            },
+            {
+              "key": "Tweet|rich_text",
+              "textContent": "={{$json.tweet}}"
+            },
+            {
+              "key": "LinkedIn|rich_text",
+              "textContent": "={{$json.linkedin}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1040, 0],
+      "id": "9e582782-e6c8-4c75-b61b-0e89948b0435",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "D8Rln5Ka7XCVcFjR",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Feed Trigger": {
+      "main": [[{ "node": "Code in JavaScript", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript": {
+      "main": [[{ "node": "Code in JavaScript1", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript1": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Code in JavaScript2", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript2": {
+      "main": [[{ "node": "Create a database page", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "49d80356-26e5-4f4e-a328-04879ca2753d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bcff8dfeb58c947348fc7118a867623be56c53a69a117794fdee1e6fd9843a7b"
+  },
+  "id": "I-LcU9Y3rcqoG2TUoB2wQ",
+  "tags": []
+}
