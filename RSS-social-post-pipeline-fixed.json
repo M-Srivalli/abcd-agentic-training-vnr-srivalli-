@@ -1,16 +1,12 @@
 {
-  "name": "RSS-social post pipeline",
+  "name": "RSS-social post pipeline (Agent)",
   "nodes": [
     {
       "parameters": {
         "pollTimes": {
           "item": [
-            {
-              "mode": "everyMinute"
-            },
-            {
-              "hour": 6
-            }
+            { "mode": "everyMinute" },
+            { "hour": 6 }
           ]
         },
         "feedUrl": "https://techcrunch.com/feed/"
@@ -43,22 +39,36 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "http://host.docker.internal:11434/api/generate",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"llama3\",\n  \"prompt\": \"You are a JSON API. Return ONLY a raw JSON object, no markdown, no backticks, no explanation.\\n\\nArticle:\\n{{$json.content}}\\n\\nReturn exactly this structure:\\n{\\\"bullets\\\": [\\\"point1\\\", \\\"point2\\\", \\\"point3\\\"], \\\"tweet\\\": \\\"tweet text here\\\", \\\"linkedin\\\": \\\"linkedin hook here\\\"}\",\n  \"stream\": false,\n  \"format\": \"json\"\n}",
-        "options": {}
+        "agent": "toolsAgent",
+        "promptType": "define",
+        "text": "=You are a social media content strategist. Given the following article, your job is to reason about the key insights and produce compelling content.\n\nArticle Title: {{$json.title}}\nArticle URL: {{$json.url}}\nArticle Content:\n{{$json.content}}\n\nThink step by step:\n1. Identify the 3 most important takeaways from this article.\n2. Craft a punchy, engaging tweet (max 280 chars) that would make someone click the link.\n3. Write a LinkedIn hook (2-3 sentences) that positions this as a must-read for professionals.\n\nReturn ONLY a raw JSON object (no markdown, no backticks) in exactly this structure:\n{\"bullets\": [\"point1\", \"point2\", \"point3\"], \"tweet\": \"tweet text here\", \"linkedin\": \"linkedin hook here\"}",
+        "options": {
+          "systemMessage": "You are a social media content strategist who reads tech news articles and produces structured social content. You always reason carefully before writing, and you always return valid JSON with no extra text, no markdown fences, and no explanation outside the JSON object."
+        }
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
       "position": [624, 0],
-      "id": "8a223f35-dd83-4054-a564-ee7ddc9b363e",
-      "name": "HTTP Request"
+      "id": "a7f3c901-bb34-4e2d-9f6a-11c2d0e84321",
+      "name": "AI Agent"
     },
     {
       "parameters": {
-        "jsCode": "try {\n  let raw = $json.response || '';\n\n  // Find the JSON object within the response\n  const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!jsonMatch) throw new Error('No JSON found in response');\n\n  const cleaned = jsonMatch[0]\n    .replace(/\\\\n/g, ' ')\n    .replace(/\\n/g, ' ')\n    .replace(/[\\u201C\\u201D]/g, '\"')\n    .replace(/[\\u2018\\u2019]/g, \"'\")\n    .trim();\n\n  const data = JSON.parse(cleaned);\n\n  const source = $('RSS Feed Trigger').item.json;\n\n  return [{\n    json: {\n      title: source.title ?? source.name ?? 'Untitled',\n      url: source.link ?? source.url ?? '',\n      bullets: Array.isArray(data.bullets) ? data.bullets : [],\n      tweet: data.tweet ?? '',\n      linkedin: data.linkedin ?? ''\n    }\n  }];\n\n} catch (e) {\n  const source = $('RSS Feed Trigger').item.json;\n  return [{\n    json: {\n      title: source.title ?? source.name ?? 'Parse Error',\n      url: source.link ?? source.url ?? '',\n      bullets: ['Error: ' + e.message],\n      tweet: '',\n      linkedin: ''\n    }\n  }];\n}"
+        "baseUrl": "http://host.docker.internal:11434",
+        "model": "llama3",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [624, 200],
+      "id": "b2e1d440-cc45-4f1a-a7b3-22f3a1c94532",
+      "name": "Ollama Chat Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  let raw = $json.output || '';\n\n  const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!jsonMatch) throw new Error('No JSON found in agent response');\n\n  const cleaned = jsonMatch[0]\n    .replace(/\\\\n/g, ' ')\n    .replace(/\\n/g, ' ')\n    .replace(/[\\u201C\\u201D]/g, '\"')\n    .replace(/[\\u2018\\u2019]/g, \"'\")\n    .trim();\n\n  const data = JSON.parse(cleaned);\n\n  const source = $('RSS Feed Trigger').item.json;\n\n  return [{\n    json: {\n      title: source.title ?? source.name ?? 'Untitled',\n      url: source.link ?? source.url ?? '',\n      bullets: Array.isArray(data.bullets) ? data.bullets : [],\n      tweet: data.tweet ?? '',\n      linkedin: data.linkedin ?? ''\n    }\n  }];\n\n} catch (e) {\n  const source = $('RSS Feed Trigger').item.json;\n  return [{\n    json: {\n      title: source.title ?? source.name ?? 'Parse Error',\n      url: source.link ?? source.url ?? '',\n      bullets: ['Error: ' + e.message],\n      tweet: '',\n      linkedin: ''\n    }\n  }];\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -124,9 +134,12 @@
       "main": [[{ "node": "Code in JavaScript1", "type": "main", "index": 0 }]]
     },
     "Code in JavaScript1": {
-      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
     },
-    "HTTP Request": {
+    "Ollama Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "AI Agent": {
       "main": [[{ "node": "Code in JavaScript2", "type": "main", "index": 0 }]]
     },
     "Code in JavaScript2": {
@@ -139,7 +152,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "49d80356-26e5-4f4e-a328-04879ca2753d",
+  "versionId": "59e90467-37f6-5g5f-b439-15980db3831e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcff8dfeb58c947348fc7118a867623be56c53a69a117794fdee1e6fd9843a7b"
