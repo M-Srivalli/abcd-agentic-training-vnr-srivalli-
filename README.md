@@ -14,7 +14,7 @@ An automated n8n workflow that reads tech news from an RSS feed, uses a local LL
    - A LinkedIn hook (2–3 sentences)
 4. **Parses the structured JSON** output from the agent
 5. **Saves everything to Notion** in a structured database page
-**WORKFLOW DEMO**: https://1drv.ms/v/c/a4ea6965127121c5/IQDbsUnFYwb9QpICVrf9z9bgAeM0yJC7z1-MXuWJodx7boI?e=WBexZD
+6. **WORKFLOW DEMO**: https://1drv.ms/v/c/a4ea6965127121c5/IQDbsUnFYwb9QpICVrf9z9bgAeM0yJC7z1-MXuWJodx7boI?e=WBexZD
 
 ---
 
