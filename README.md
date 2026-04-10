@@ -88,26 +88,6 @@ Each article produces a Notion page with:
 
 ---
 
-## 🔄 Difference from the Non-Agentic Version
-
-| Feature | Agentic Version | Fixed (HTTP) Version |
-|--------|----------------|----------------------|
-| LLM Integration | LangChain AI Agent node | Direct HTTP POST to Ollama |
-| Reasoning | Step-by-step chain-of-thought | Single prompt |
-| Flexibility | Easily add tools/memory | Simpler, more predictable |
-| Output field | `$json.output` | `$json.response` |
-
----
-
-## 📁 Files
-
-| File | Description |
-|------|-------------|
-| `RSS-social-post-pipeline-agentic.json` | Agentic workflow using LangChain AI Agent |
-| `RSS-social-post-pipeline-fixed.json` | Simpler HTTP-based workflow |
-
----
-
 ## 👩‍💻 Author
 
 **M. Srivalli** — VNR Agentic Training Project  
