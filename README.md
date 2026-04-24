@@ -15,7 +15,6 @@ An automated n8n workflow that reads tech news from an RSS feed, uses a local LL
 4. **Parses the structured JSON** output from the agent
 5. **Saves everything to Notion** in a structured database page
 6. **Workflow Demo**: https://1drv.ms/v/c/a4ea6965127121c5/IQDbsUnFYwb9QpICVrf9z9bgAeM0yJC7z1-MXuWJodx7boI?e=WBexZD
-7. **Workflow Images**:https://1drv.ms/i/c/a4ea6965127121c5/IQC7hBJ3mT-4SIclUBRf0QpGAZtSDJ_CZZ9hI2O4dJgN5Mc?e=dJQZwg , https://1drv.ms/i/c/a4ea6965127121c5/IQCOUx3ntSHbQIc-GJ64UHodAYMvwa_PgIGzUj6sCByyrkU?e=R6d96J
 
 ---
 
@@ -87,6 +86,11 @@ Each article produces a Notion page with:
 - **Bullets** — 3 key takeaways
 - **Tweet** — Ready-to-post tweet (≤ 280 chars)
 - **LinkedIn** — Professional hook for LinkedIn
+
+---
+## Screenshots
+<img width="1913" height="988" alt="Screenshot 2026-04-10 105919" src="https://github.com/user-attachments/assets/35a775ef-1b63-4fe2-b9e8-13c1258a9f64" />
+<img width="1913" height="971" alt="Screenshot 2026-04-10 110244" src="https://github.com/user-attachments/assets/4ec123ec-24f5-445e-bc64-745d6abcf60c" />
 
 ---
 
